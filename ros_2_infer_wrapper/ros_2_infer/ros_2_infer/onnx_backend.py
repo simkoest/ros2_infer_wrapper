@@ -2,8 +2,7 @@ import onnxruntime
 import time
 
 class ONNXBackend():
-    def __init__(self, model_path: str, device: str = "cpu") -> None:    
-        device = "cpu"
+    def __init__(self, model_path: str, device: str = "cpu") -> None:
         if device == "cuda":
             providers = ["CUDAExecutionProvider"]
         elif device == "cpu":

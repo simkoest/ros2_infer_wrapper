@@ -124,15 +124,25 @@ source install/setup.bash
 ros2 run ros_2_infer ros_2_infer
 ```
 
-once the node is started you can configure the wrapper via a ros paramter. Start a second shell and run
+once the node is started you can configure the wrapper via a ros paramter. For demnostration purpoeses the node will start up with the depth image segmentation model EsaNet. To change the model you can start a second shell and run
 
 ```shell script
-ros2 param set /Inference_Node config_name 'depth_image_segmentation.yaml'
+ros2 param set /Inference_Node config_name 'image_bboxes_rcnn.yaml'
 ```
 
 The name has to match the file name in the **[config](./ros_2_infer/config/)** folder. Make sure that the topics are published to the configured subribed topic in the yaml file using either a demo publisher or a camera like the intel realsense d435i
 
 If values are published to the subscribed topics the wrapper will publish the inference results to the corresponding published topic
+
+You can use the demo publisher that is integrated in the project for demonstration purposes and is based on the basic ROS publisher that can be found in the documentation
+
+```shell script
+ros2 run2 run py_pubsub talker
+```
+
+This demo publisher will publish a point_cloud file to the topic 'point_clouds', a depth and rgb image to the topics 'image/depth' and 'image/rgb' and a demo image of the COCO dataset to the topic 'image/demo'
+
+In order to test models with the Kitti Dataset, checkout the ROS2 Kitti Data Publisher which publishes PointCloud and Image data of Kitti Test Drives https://github.com/umtclskn/ros2_kitti_publishers
 
 ### 2.3 Running the node via docker
 To run the node with docker check out the **[Dockerfile](./Dockerfile)**. By default the nvidia TensorRT Image is used to allow usage for nvida gpu devices. If your Hardware does not support this, you can replace the image with a standard ubuntu 22.04 one.
@@ -149,14 +159,29 @@ The name has to match the file name in the **[config](./ros_2_infer/config/)** f
 
 If values are published to the subscribed topics the wrapper will publish the inference results to the corresponding published topic
 
-## 3. Adding new Models and processing steps
-### 3.1 Adding a new Model to the wrapper
+
+## 3. Currently implemented processing steps
+The currently implemented pre- and postprocessing steps are documented here:
+
+- **[image_preprocessing](/ros_2_infer_wrapper/resources/image_preprocessing_implemented.md)**
+- **[image_postprocessing](/ros_2_infer_wrapper/resources/image_postprocessing_implemented.md)**
+- **[point_cloud_preprocessing](/ros_2_infer_wrapper/resources/point_cloud_preprocessing_implemented.md.md)**
+- **[point_cloud_postprocessing](/ros_2_infer_wrapper/resources/point_cloud_postprocessing_implemented.md)**
+- **[numpy_array_preprocessing](/ros_2_infer_wrapper/resources/np_array_preprocessing.md)**
+- **[type_conversions](/ros_2_infer_wrapper/resources/type_conversions_implemented.md)**
+
+And can be extended at will
+
+
+## 4. Adding new Models and processing steps
+### 4.1 Adding a new Model to the wrapper
 - In order to integrate new AI Models into the wrapper, add the onnx model to the **[model folder](./ros_2_infer/models/)**. In addition to that create a new yaml configuration file in the **[config](./ros_2_infer/config/)** folder. 
 - Make sure to match the specified format that is used for the other models.
 - Edit the expected subscribed and published types to the configuration e.g. Image and Detection2DArray
 - Check the existing pre and postprocesing steps to evaluate if you can already fit the model data to your model and add each steps in the configuration
+- Start of by adding the needed type_conversions to change the the subscribed data to the needed type and as a last post processing step to change the output to the dedicated output type
 - If there are any specific pre- or postprocessing steps needed that are not yet implemented, add it to the corresponding file
-### 3.2 Adding a new process step
+### 4.2 Adding a new process step
 If your model needs specific pre-/postprocessing steps that are not yet implemented add a new method to the corresponding file e.g the **[image_preprocessing](./ros_2_infer/ros_2_infer/image_preprocessing.py)**
 
 - Make sure that the first input parameter is named 'data' as this will represent the received data from the step before
@@ -164,6 +189,7 @@ If your model needs specific pre-/postprocessing steps that are not yet implemen
 - Make sure to follow the naming pattern in order to avoid having duplicate methods
 - Make sure to return the result of your method to allow the pipeline to pass the 
 result along to the next step
+- Add an entry to the documentation file to keep track of all implemented pre and postprocessing steps
 
 Example for a simple processing method:
 
@@ -174,3 +200,5 @@ def image_resize_by_ratio(data, ratio):
     image = cv2.resize(image,(int(ratio * image.shape[1]), int(ratio * image.shape[0]))).astype(np.float32)
     return image
 ```
+
+

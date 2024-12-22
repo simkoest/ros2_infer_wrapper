@@ -40,20 +40,42 @@ class InferPipelineNode(Node):
         self.thread_executor = concurrent.futures.ThreadPoolExecutor(max_workers=60)
         self.callback_group = MutuallyExclusiveCallbackGroup()
         self.cv_bridge = CvBridge()        
-
-        self.declare_parameter('config_name')
-        self.declare_parameter('device', 'cpu')
-        
+        self. inference_backend = None
         self.publisher = None
+
+        #Declare ROS Parameters
+        self.declare_parameter('config_name', 'depth_image_segmentation.yaml')
+        self.declare_parameter('device', 'cpu')
+        current_configuration = self.get_parameter('config_name')
+
+        #Setup the shared path of the ROS Package
+        dirname = os.path.dirname(__file__)
+        share_path =  path.abspath(path.join(dirname,"../../../../share/ros_2_infer/"))
+        configuration = path.join('config/',str(current_configuration.value))
+        config = path.join(share_path,configuration)        
+
+
+        self.config_reader = ConfigReader(config)
+        
+        self.config_reader.read_conf()
+        modelname = path.join('models',self.config_reader.configs["model_path"])
+        self.model_path = path.join(share_path,modelname)        
+
+        self.get_logger().info(f'currently used configuration: {config}')
+        
+        # Initialize the Inference Backend, Subscribers and Publisher
+        if self.init_inference_backend(self.model_path):
+            self.setup_subscriptions()
+            self.setup_publisher()
+                
         
         # Wait for the parameter configuration to start running the node
-        self.add_on_set_parameters_callback(self.parameter_change_callback)
-        self. inference_backend = None
+        self.add_on_set_parameters_callback(self.parameter_change_callback)    
 
 
-    def init_inference_backend(self, modelpath):
+    def init_inference_backend(self, modelpath, device = "cpu"):
         try:            
-            self.inference_backend = ONNXBackend(modelpath)
+            self.inference_backend = ONNXBackend(modelpath, device)
             return True
         except Exception as e:
             self.get_logger().error(
@@ -65,25 +87,46 @@ class InferPipelineNode(Node):
         result = SetParametersResult()        
         # Iterate over each parameter in this node
         for param in params:            
-            if param.name == "config_name":                
-                # Change the configuration of the node to the specified model
-                self.get_logger().info(f'param changed to {param.value}')
-                dirname = os.path.dirname(__file__)
-                share_path =  path.abspath(path.join(dirname,"../../../../share/ros_2_infer/"))
-                configuration = path.join('config/',param.value)
-                config = path.join(share_path,configuration)
-                self.config_reader = ConfigReader(config)
-                
-                self.config_reader.read_conf()
-                modelname = path.join('models',self.config_reader.configs["model_path"])
-                model_path = path.join(share_path,modelname)
-                self.get_logger().info(model_path)
-                
-                if self.init_inference_backend(model_path):
-                    self.setup_subscriptions()
-                    self.setup_publisher()
+            if param.name == "config_name":   
+                try:             
+                    # Change the configuration of the node to the specified model
+                    self.get_logger().info(f'param changed to {param.value}')
+                    dirname = os.path.dirname(__file__)
+                    share_path =  path.abspath(path.join(dirname,"../../../../share/ros_2_infer/"))
+                    configuration = path.join('config/',param.value)
+                    config = path.join(share_path,configuration)
+                    
+                    self.config_reader = ConfigReader(config)
 
-                result.successful = True
+                    self.config_reader.read_conf()
+                    modelname = path.join('models',self.config_reader.configs["model_path"])
+                    self.model_path = path.join(share_path,modelname)                    
+
+                    self.get_logger().debug(self.model_path)
+
+                    self.destroy_publisher(self.publisher)
+                    for sub in self.subscriptions:
+                        self.destroy_subscription(self.destroy_subscription(sub))
+
+                    if self.init_inference_backend(self.model_path):
+                        self.setup_subscriptions()
+                        self.setup_publisher()
+
+                    result.successful = True
+                except Exception as ex:
+                    self.get_logger().error(f'Failed to change parameter: {ex}')
+                    result.successful = False
+                    
+
+            #Change ONNX Execution Provider
+            if param.name == "device":      
+                try:          
+                    self.inference_backend = ONNXBackend(self.model_path, param.value)
+
+                    result.successful = True
+                except Exception as ex:
+                    self.get_logger().error(f'Failed to change Execution Provider! {ex}')
+        
 
     
         return result
@@ -211,7 +254,8 @@ class InferPipelineNode(Node):
         self.get_logger().info(f"Total duration of postprocessing: {t_post_end - t_post_start:.3f}")
         return input
     
-    def setup_publisher(self):
+    def setup_publisher(self):       
+
         publish_type = self.config_reader.configs["publish_type"]        
         if publish_type == "Image":
             self.publisher = self.create_publisher(Image, self.config_reader.configs["pub_topic"], 10)
