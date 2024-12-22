@@ -1,0 +1,2 @@
+[console_scripts]
+ros_2_infer = ros_2_infer.ros_2_infer:main

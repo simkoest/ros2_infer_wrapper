@@ -1,0 +1,116 @@
+model_path: EsaNet.onnx
+sub_topics: 
+  - topic: /image/rgb
+    subscribed_type: Image
+    modelInputPosition: 0
+    preprocessing_steps:
+    - name: type_conv_image_to_numpy
+      params:     
+    - name: image_resize_image
+      params:
+        - name: target_size
+          value: !!python/tuple [640,480] 
+        - name: interpolation
+          value: INTER_LINEAR
+    - name: array_transpose_to_shape
+      params:      
+        - name: transpose_order
+          value: !!python/tuple [2,0,1]
+    - name: numpy_to_torch_tensor
+      params:
+    - name: image_normalize
+      params:
+    - name: torch_normalize
+      params: 
+        - name: mean
+          value: [0.485, 0.456, 0.406]
+        - name: std
+          value: [0.229, 0.224, 0.225]
+    - name: array_expand_dims
+      params:
+    # - name: subtract_mean
+    #   params: 
+    #     - name: mean
+    #       value: [0.485, 0.456, 0.406]
+    # - name: divide_by_std
+    #   params: 
+    #     - name: std
+    #       value: [0.229, 0.224, 0.225]  
+    # - name: to_contigous_array
+    #   params:  
+  - topic: /image/depth
+    modelInputPosition: 1
+    subscribed_type: Image
+    preprocessing_steps:     
+    - name: type_conv_image_to_numpy
+      params:     
+    - name: image_resize_image
+      params:
+        - name: target_size
+          value: !!python/tuple [640,480] 
+        - name: interpolation
+          value: INTER_NEAREST
+    - name: array_expand_dims
+      params:
+    - name: numpy_to_torch_tensor
+      params:
+    - name: torch_normalize
+      params: 
+        - name: mean
+          value: 19025.14930492213
+        - name: std
+          value: 9880.916071806689
+    - name: array_expand_dims
+      params:           
+    # - name: to_contigous_array
+    #   params:          
+    # - name: transpose_to_shape
+    #   params:      
+    #     - name: transpose_order
+    #       value: !!python/tuple [1,0,2]        
+    # - name: to_contigous_array
+    #   params:
+    # - name: to_contigous_array
+    #   params:
+    # - name: subtract_mean
+    #   params: 
+    #     - name: mean
+    #       value: 19025.14930492213
+    # - name: divide_by_std
+    #   params: 
+    #     - name: std
+    #       value: 9880.916071806689    
+      
+      
+
+pub_topic: "bboxes"
+model_input_type: "Image"
+
+
+
+model_output_type: "Image"
+publish_type: "Image"
+postprocessing_steps:
+  - name: numpy_to_torch_tensor
+    params:
+      - name: data
+        get_from_output_pos: [0]
+  - name: torch_interpolate
+    params:
+      - name: size
+        value: !!python/tuple [480,640]
+  - name: torch_argmax
+    params:
+  - name: torch_tensor_to_numpy
+    params:
+  - name: image_color_label
+    params:
+      - name: colors
+        value: [!!python/tuple [0, 0, 0], !!python/tuple [119, 119, 119], !!python/tuple [244, 243, 131], !!python/tuple [137, 28, 157], !!python/tuple [150, 255, 255], !!python/tuple [54, 114, 113], !!python/tuple [0, 0, 176], !!python/tuple [255, 69, 0], !!python/tuple [87, 112, 255], !!python/tuple [0, 163, 33],!!python/tuple [255, 150, 255], !!python/tuple [255, 180, 10], !!python/tuple [101, 70, 86],!!python/tuple [38, 230, 0], !!python/tuple [255, 120, 70], !!python/tuple [117, 41, 121], !!python/tuple [150, 255, 0], !!python/tuple [132, 0, 255], !!python/tuple [24, 209, 255], !!python/tuple [191, 130, 35], !!python/tuple [219, 200, 109], !!python/tuple [154, 62, 86], !!python/tuple [255, 190, 190], !!python/tuple [255, 0, 255], !!python/tuple [152, 163, 55], !!python/tuple [192, 79, 212], !!python/tuple [230, 230, 230], !!python/tuple [53, 130, 64], !!python/tuple [155, 249, 152], !!python/tuple [87, 64, 34], !!python/tuple [214, 209, 175], !!python/tuple [170, 0, 59], !!python/tuple [255, 0, 0], !!python/tuple [193, 195, 234], !!python/tuple [70, 72, 115], !!python/tuple [255, 255, 0], !!python/tuple [52, 57, 131], !!python/tuple [12, 83, 45]]
+  - name: type_conv_numpy_to_image
+    params:  
+        
+
+
+    
+      

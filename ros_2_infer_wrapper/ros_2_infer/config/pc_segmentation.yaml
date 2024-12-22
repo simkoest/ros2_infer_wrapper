@@ -1,0 +1,62 @@
+model_path: "pointnet.onnx"
+sub_topic: "point_clouds"
+pub_topic: "bev_maps"
+subscribed_type: "PointCloud2"
+model_input_type: "PointCloud2"
+preprocessing_steps:     
+  - name: type_conv_pointcloud_to_numpy_array
+    params:
+  - name: point_cloud_normalize
+    params:
+  - name: array_choose_random_samples
+    params:
+      - name: length
+        value: 125634
+      - name: sample_size
+        value: 25000
+  - name: array_to_contigous_array
+    params:  
+  - name: array_transpose_to_shape
+    params:
+      - name: transpose_order
+        value: !!python/tuple [0,2,1]  
+model_output_type: "PointCloud2"
+publish_type: "PointCloud2"
+postprocessing_steps:
+  - name: point_cloud_decode_SFA
+    params: 
+      - name: data
+        get_from_output_pos: 0 
+      - name: cen_offset
+        get_from_output_pos: 1
+      - name: direction
+        get_from_output_pos: 2
+      - name: z_coor
+        get_from_output_pos: 3
+      - name: dim
+        get_from_output_pos: 4
+  - name: point_cloud_post_process_SFA
+    params:
+      - name: bound_size_x
+        value: 50
+      - name: bound_size_y
+        value: 50      
+      - name: bev_height
+        value: 608
+      - name: bev_width
+        value: 608
+      - name: num_classes
+        value: 3
+  - name: point_cloud_draw_predictions_SFA
+    params:
+      - name: img
+        use_orig_input: True
+      - name: colors
+        value: [[0, 255, 255],[0, 0, 255],[255, 0, 0],[255, 120, 0],[255, 120, 120],[0, 120, 0],[120, 255, 255],[120, 0, 255]]
+      - name: num_classes
+        value: 3  
+
+
+
+    
+      

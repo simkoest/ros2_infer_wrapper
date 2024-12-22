@@ -1,0 +1,74 @@
+model_path: "SFA3d2.onnx"
+sub_topics: 
+  - topic: point_clouds
+    subscribed_type: PointCloud2
+    modelInputPosition: 0
+    preprocessing_steps:  
+      - name: type_conv_pointcloud_to_numpy_array   
+        params:
+      - name: point_cloud_create_bev_map
+        params:
+        - name: boundaries
+          value: 
+            minX: 0
+            maxX: 50
+            minY: -25
+            maxY: 25
+            minZ: -2.73
+            maxZ: 1.27
+        - name: bev_size
+          value: !!python/tuple [608,608]
+      - name: array_expand_dims
+        params:
+# sub_topic: "point_clouds"
+# pub_topic: "bev_maps"
+# subscribed_type: "PointCloud2"
+# model_input_type: "Image"
+pub_topic: "bev_maps"
+
+model_output_type: "Image"
+publish_type: "Image"
+postprocessing_steps:
+  - name: point_cloud_decode_SFA
+    params: 
+      - name: data
+        get_from_output_pos: [0] 
+      - name: cen_offset
+        get_from_output_pos: [1]
+      - name: direction
+        get_from_output_pos: [2]
+      - name: z_coor
+        get_from_output_pos: [3]
+      - name: dim
+        get_from_output_pos: [4]
+  - name: point_cloud_post_process_SFA
+    params:
+      - name: bound_size_x
+        value: 50
+      - name: bound_size_y
+        value: 50      
+      - name: bev_height
+        value: 608
+      - name: bev_width
+        value: 608
+      - name: num_classes
+        value: 3
+  - name: point_cloud_draw_predictions_SFA
+    params:
+      - name: RGB_Map
+        get_from_model_input_pos: [0]
+      - name: colors
+        value: [[0, 255, 255],[0, 0, 255],[255, 0, 0],[255, 120, 0],[255, 120, 120],[0, 120, 0],[120, 255, 255],[120, 0, 255]]
+      - name: bev_width
+        value: 608
+      - name: bev_height
+        value: 608        
+      - name: num_classes
+        value: 3        
+  - name: type_conv_numpy_to_image
+    params:  
+        
+
+
+    
+      

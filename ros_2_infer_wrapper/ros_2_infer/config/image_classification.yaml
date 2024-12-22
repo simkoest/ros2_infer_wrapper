@@ -1,0 +1,39 @@
+model_path: "caffenet-12.onnx"
+sub_topics: 
+  - topic: /kitti/image/color/left
+    subscribed_type: Image
+    modelInputPosition: 0
+    preprocessing_steps:   
+      - name: type_conv_image_to_numpy
+        params:     
+      - name: image_resize_and_scale
+        params:
+          - name: target_size
+            value: !!python/tuple [224,224]  
+          - name: padding
+            value: False
+      - name: array_transpose_to_shape
+        params:      
+          - name: transpose_order
+            value: !!python/tuple [2,0,1]
+      - name: array_to_contigous_array
+        params:
+
+postprocessing_steps:
+  - name: type_conv_inference_to_classification
+    params: 
+      - name: data
+        use_orig_input_pos: [0]
+      - name: scores
+        get_from_output_pos: [0,0]
+
+
+pub_topic: "classification"
+subscribed_type: "Image"
+model_input_type: "Image"
+
+model_output_type: "Image"
+publish_type: "Classification"
+
+    
+      

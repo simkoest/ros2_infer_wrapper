@@ -1,0 +1,9 @@
+__pycache__/
+venv/
+log/
+*.pyc
+install/
+build/
+../build/
+ros_2_infer/build/
+ros_2_infer/build/install/

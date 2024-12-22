@@ -1,0 +1,56 @@
+model_path: "bisenetv1.onnx"
+sub_topics: 
+  - topic: /kitti/image/color/left
+    subscribed_type: Image
+    modelInputPosition: 0
+    preprocessing_steps:   
+      - name: type_conv_image_to_numpy
+        params:     
+      - name: image_resize_and_scale
+        params:
+          - name: target_size
+            value: !!python/tuple [512,768]  
+          - name: padding
+            value: False
+      - name: image_normalize
+        params:
+      - name: image_subtract_mean
+        params: 
+          - name: mean
+            value: [0.485, 0.456, 0.406]
+      - name: image_divide_by_std
+        params: 
+          - name: std
+            value: [0.229, 0.224, 0.225]
+      - name: array_transpose_to_shape
+        params:
+          - name: transpose_order
+            value: !!python/tuple [2,0,1]
+      - name: array_to_contigous_array
+        params: 
+
+pub_topic: "seg_image"
+
+model_input_type: "Image"
+
+
+
+model_output_type: "Image"
+publish_type: "Image"
+postprocessing_steps:
+  - name: image_deresize
+    params:
+      - name: data
+        get_from_output_pos: [0,0]    
+      - name: size
+        value: !!python/tuple [512,1392]
+  - name: image_colorize_image_segmentation
+    params:
+      - name: rgb_image
+        use_orig_input_pos: [0]
+      - name: color_palette
+        value: [[  0,  0,  0],[  0,  0,  0],[  0,  0,  0],[  0,  0,  0],[111, 74,  0],[ 81,  0, 81],[128, 64,128],[244, 35,232],[250,170,160],[230,150,140],[ 70, 70, 70],[102,102,156],[190,153,153],[180,165,180],[150,100,100],[150,120, 90],[153,153,153],[153,153,153],[250,170, 30],[220,220,  0],[107,142, 35],[152,251,152],[ 70,130,180],[220, 20, 60],[255,  0,  0],[  0,  0,142],[  0,  0, 70],[  0, 60,100],[  0,  0, 90],[  0,  0,110],[  0, 80,100],[  0,  0,230],[119, 11, 32],[ 64,128,128],[190,153,153],[150,120, 90],[153,153,153],[0,   64, 64],[0,  128,192],[128, 64,  0],[64,  64,128],[102,  0,  0],[ 51,  0, 51],[ 32, 32, 32],[  0,  0,142]]
+  - name: type_conv_numpy_to_image
+    params:  
+    
+      

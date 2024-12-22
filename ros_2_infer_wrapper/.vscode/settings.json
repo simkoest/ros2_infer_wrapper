@@ -1,0 +1,12 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/agrigaia/ros2_ws_test/install/ros_2_infer/lib/python3.8/site-packages",
+        "/home/agrigaia/ros2_ws_test/install/realsense2_camera_msgs/lib/python3.8/site-packages",
+        "/opt/ros/foxy/lib/python3.8/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/agrigaia/ros2_ws_test/install/ros_2_infer/lib/python3.8/site-packages",
+        "/home/agrigaia/ros2_ws_test/install/realsense2_camera_msgs/lib/python3.8/site-packages",
+        "/opt/ros/foxy/lib/python3.8/site-packages"
+    ]
+}
